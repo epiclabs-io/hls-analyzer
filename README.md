@@ -1,4 +1,4 @@
-# hls-analyzer
+# HLS Analyzer
 Tool for analyzing HTTP Live Streams (HLS) compatible with both VOD and Live content.
 
 It analyzes TS segments of the stream and provide useful information about the content, pretty useful to catch encoding or playback quality issues:
