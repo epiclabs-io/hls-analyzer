@@ -15,19 +15,14 @@ max_characters_frames_info = 80
 
 def download_url(uri, range=None):
     print("\tDownloading {url}, Range: {range}".format(url=uri, range=range))
-    request = urllib2.Request(uri)
-    request.add_header('User-agent', 'hls-analyzer')
-    if(range is not None):
-        request.add_header('Range', range)
 
-    try:
-        response = urllib2.urlopen(request)
-        content = response.read()
-        response.close()
-        #print "\tDownloaded"
-    except urllib2.HTTPError, err:
-        print("\tThere was an issue ({}) downloading  {}".format(err.code, uri))
-        content = ""
+    opener = urllib2.build_opener(m3u8.getCookieProcessor())
+    if(range is not None):
+        opener.addheaders.append(('Range', range))
+
+    response = opener.open(uri)
+    content = response.read()
+    response.close()
 
     return content
 

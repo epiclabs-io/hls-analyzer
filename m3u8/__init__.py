@@ -8,11 +8,15 @@ PYTHON_MAJOR_VERSION = sys.version_info
 
 import os
 import posixpath
+from cookielib import CookieJar
 
 try:
     import urlparse as url_parser
     import urllib2
-    urlopen = urllib2.urlopen
+    cj = CookieJar()
+    cookieProcessor = urllib2.HTTPCookieProcessor(cj)
+    opener = urllib2.build_opener(cookieProcessor)
+    urlopen = opener.open
 except ImportError:
     import urllib.parse as url_parser
     from urllib.request import urlopen as url_opener
@@ -41,6 +45,9 @@ def load(uri):
         return _load_from_uri(uri)
     else:
         return _load_from_file(uri)
+
+def getCookieProcessor():
+    return cookieProcessor
 
 # Support for python3 inspired by https://github.com/szemtiv/m3u8/
 def _load_from_uri(uri):
