@@ -1,3 +1,8 @@
+# coding: utf-8
+# Copyright 2014 jeoliva author. All rights reserved.
+# Use of this source code is governed by a MIT License
+# license that can be found in the LICENSE file.
+
 from bitreader import BitReader
 from payloadreader import PayloadReader
 
@@ -34,7 +39,6 @@ class ADTSReader(PayloadReader):
 
     def getFormat(self):
         return "Audio (AAC) - Sample Rate: {}, Channels: {}".format(self.sampleRate, self.channels)
-
 
     def consumeData(self, pts):
         if(pts >= 0):
@@ -85,8 +89,6 @@ class ADTSReader(PayloadReader):
                 return i
 
         return len(self.dataBuffer);
-
-
 
     def _parseAACHeader(self, start):
         #print "AAC Frame {},{},{},{},{}".format(hex(self.dataBuffer[start]), hex(self.dataBuffer[start+1]), self.dataBuffer[start+2], self.dataBuffer[start+3], self.dataBuffer[start+4])

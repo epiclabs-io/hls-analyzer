@@ -1,3 +1,7 @@
+# coding: utf-8
+# Copyright 2014 jeoliva author. All rights reserved.
+# Use of this source code is governed by a MIT License
+# license that can be found in the LICENSE file.
 
 class PayloadReader(object):
 
@@ -9,7 +13,6 @@ class PayloadReader(object):
 
     def append(self, packet):
         self.dataBuffer.extend(packet.data[packet.byteOffset:])
-
 
     def flush(self):
         if(len(self.dataBuffer) > 0):

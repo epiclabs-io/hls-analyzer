@@ -1,3 +1,8 @@
+# coding: utf-8
+# Copyright 2014 jeoliva author. All rights reserved.
+# Use of this source code is governed by a MIT License
+# license that can be found in the LICENSE file.
+
 from h264reader import H264Reader
 from adtsreader import ADTSReader
 from id3reader import ID3Reader
@@ -10,7 +15,6 @@ class PESReader(object):
     TS_STREAM_TYPE_ID3 = 0x15
     TS_STREAM_TYPE_MPA = 0x03
     TS_STREAM_TYPE_MPA_LSF = 0x04
-
 
     def __init__(self, pid, type ):
         self.pid = pid
@@ -33,7 +37,6 @@ class PESReader(object):
 
         if(self.payloadReader is not None):
             self.payloadReader.append(packet)
-
 
     def _parsePESHeader(self, packet):
         packet.skipBytes(7)

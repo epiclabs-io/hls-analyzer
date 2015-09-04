@@ -1,3 +1,8 @@
+# coding: utf-8
+# Copyright 2014 jeoliva author. All rights reserved.
+# Use of this source code is governed by a MIT License
+# license that can be found in the LICENSE file.
+
 from bitreader import BitReader
 from payloadreader import PayloadReader
 from fractions import Fraction
@@ -90,7 +95,6 @@ class H264Reader(PayloadReader):
 
             self.dataBuffer = self.dataBuffer[offset:]
 
-
     def _findNextNALUnit(self, index, type):
         limit = len(self.dataBuffer) - 3
 
@@ -135,8 +139,6 @@ class H264Reader(PayloadReader):
             return "SP"
 
         return "Unknown"
-
-
 
     def _getNALUnitName(self, type):
         if (type == self.NAL_UNIT_TYPE_SLICE):
@@ -194,9 +196,6 @@ class H264Reader(PayloadReader):
             if (data != 0xFF):
                 break;
 
-        #print("SEI NAL Unit. Type: {}, Size: {}".format(payloadType, payloadSize))
-
-
     def _parseSliceNALUnit(self, start, limit):
         sliceParser = BitReader(self.dataBuffer[start:limit])
         sliceParser.skipBytes(4)
@@ -209,14 +208,11 @@ class H264Reader(PayloadReader):
     def _addNewFrame(self, type):
         if( len(self.framesInfo) > 0 ):
             self.framesInfo += "-"
-        #self.framesInfo += "{0}({1:.03f})".format(self._getSliceTypeName(type), self.timeUs/1000000.0)
         self.framesInfo += "{0}".format(self._getSliceTypeName(type))
 
     def _parseAUDNALUnit(self, start, limit):
         audParser = BitReader(self.dataBuffer[start:limit])
         audParser.skipBytes(4)
-        #print "AUD: {}".format(audParser.readBits(3))
-
 
     def _parseSPSNALUnit(self, start, limit):
         spsParser = BitReader(self.dataBuffer[start:limit])
@@ -327,7 +323,6 @@ class H264Reader(PayloadReader):
                 self.frameHeight * self.aspectRatioDen)
 
         #print "SPS: Profile: {}, Level: {}, Width: {}, Height: {}, Ref Frames: {}, Aspect ratio: {}/{}".format(self.profileId, self.levelId, self.frameWidth, self.frameHeight, self.numRefFrames, self.aspectRatioNum, self.aspectRatioDen)
-
 
     def _skipScalingList(self, parser, size):
         lastScale = 8

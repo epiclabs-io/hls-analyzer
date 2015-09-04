@@ -1,3 +1,8 @@
+# coding: utf-8
+# Copyright 2014 jeoliva author. All rights reserved.
+# Use of this source code is governed by a MIT License
+# license that can be found in the LICENSE file.
+
 import errno
 import os
 import logging
@@ -26,7 +31,6 @@ def download_url(uri, range=None):
 
     return content
 
-
 def analyze_variant(variant, bw):
     print "***** Analyzing variant ({}) *****".format(bw)
     print "\n\t** Generic information **"
@@ -34,8 +38,6 @@ def analyze_variant(variant, bw):
     print "\tMedia sequence: {}".format(variant.media_sequence)
     print "\tIs Live: {}".format(not variant.is_endlist)
     print "\tEncrypted: {}".format(variant.key is not None)
-
-
     print "\tNumber of segments: {}".format(len(variant.segments))
 
     start = 0;
@@ -53,7 +55,6 @@ def analyze_variant(variant, bw):
     for i in range(start, min(start + num_segments_to_analyze_per_playlist, len(variant.segments))):
         analyze_segment(variant.segments[i])
 
-
 def get_range(segment_range):
     if(segment_range is None):
         return None
@@ -67,7 +68,6 @@ def get_range(segment_range):
 
     return "bytes={}-{}".format(start, start+length-1);
 
-
 def printFormatInfo(ts_parser):
     print "\n\t** Tracks and Media formats **"
 
@@ -75,7 +75,6 @@ def printFormatInfo(ts_parser):
         track = ts_parser.getTrack(i)
         print "\tTrack #{} - Type: {}, Format: {}".format(i,
             track.payloadReader.getMimeType(), track.payloadReader.getFormat())
-
 
 def printTimingInfo(ts_parser, segment):
     print "\n\t** Timing information **"
@@ -92,14 +91,12 @@ def printTimingInfo(ts_parser, segment):
     minDuration /= 1000000.0
     print("\tDuration difference (declared vs real): {0} s ({1:.2f}%)".format(segment.duration - minDuration, abs((1 - segment.duration/minDuration)*100)))
 
-
 def printFramesInfo(ts_parser):
     print "\n\t** Frames **"
 
     for i in range(0, ts_parser.getNumTracks()):
         track = ts_parser.getTrack(i)
         print "\tTrack #{0} - KF: {1:.03f}, Frames: {2}".format(i, track.payloadReader.getKeyframeInterval()/1000000.0, track.payloadReader.getFramesInfo()[0:max_characters_frames_info])
-
 
 def analyze_segment(segment):
 
@@ -149,23 +146,3 @@ if(m3u8_obj.is_variant):
         analyze_variant(m3u8.load(playlist.absolute_uri), playlist.stream_info.bandwidth)
 else:
     analyze_variant(m3u8_obj, 0)
-
-
-#segment_data = bytearray(download_url("http://devimages.apple.com.edgekey.net/streaming/examples/bipbop_4x3/gear1/fileSequence0.ts"))
-#segment_data = bytearray(download_url("http://multiplatform-f.akamaihd.net/i/multi/april11/hdworld/hdworld_,512x288_450_b,640x360_700_b,768x432_1000_b,.mp4.csmil/segment1_0_av.ts"))
-#segment_data = bytearray(download_url("http://devimages.apple.com.edgekey.net/streaming/examples/bipbop_4x3/gear0/fileSequence0.aac"))
-
-
-
-
-def test_bit_reader():
-    data = [0xfe, 0x8f, 0x00, 0xa0]
-    reader = BitReader(data)
-
-    print( hex(reader.readBits(1)) ) # 0x1
-    print( hex(reader.readUnsignedByte() )) #0xfd
-    print( hex(reader.readBits(3) )) #0x0
-    print( hex(reader.readBits(3) )) #0x7
-    print( hex(reader.readBits(3) )) #0x4
-    print( hex(reader.readBits(3) )) #0x0
-    print( hex(reader.readBits(3) )) #0x0

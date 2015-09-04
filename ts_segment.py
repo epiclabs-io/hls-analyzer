@@ -1,3 +1,8 @@
+# coding: utf-8
+# Copyright 2014 jeoliva author. All rights reserved.
+# Use of this source code is governed by a MIT License
+# license that can be found in the LICENSE file.
+
 from array import array
 from bitreader import BitReader
 from parsers.pesreader import PESReader
@@ -20,7 +25,6 @@ class TSSegmentParser(object):
         self.packetsCount = 0
         self.pmtId = -1
         self.tracks = dict()
-
 
     def prepare(self):
         self._findContainerType()
@@ -46,7 +50,6 @@ class TSSegmentParser(object):
                 return value
             i = i + 1
 
-
     def readSamples(self):
         while (self.dataOffset < len(self.data) - 1):
             byteRead = self.data[self.dataOffset]
@@ -60,7 +63,6 @@ class TSSegmentParser(object):
                 self.dataOffset = self.dataOffset + self.MPEGTS_PACKET_SIZE
 
                 self._processTSPacket(packet)
-
 
     def _findContainerType(self):
         while (self.dataOffset < len(self.data)):
@@ -97,8 +99,6 @@ class TSSegmentParser(object):
                 if(self.pmtParsed):
                     break
 
-
-
     def _processTSPacket(self, packet):
         self.packetsCount = self.packetsCount + 1
 
@@ -131,7 +131,6 @@ class TSSegmentParser(object):
                 if(track is not None):
                     track.appendData(payload_unit_start_indicator, packetParser)
 
-
     def _parseProgramId(self, payload_unit_start_indicator, packetParser):
         if (payload_unit_start_indicator):
             packetParser.skipBytes( packetParser.readUnsignedByte() )
@@ -144,7 +143,6 @@ class TSSegmentParser(object):
 
         self.pmtId = packetParser.readBits(13)
         #print "PMT Id: {}".format(self.pmtId)
-
 
     def _parseProgramTable(self, payload_unit_start_indicator, packetParser):
         if (payload_unit_start_indicator):
