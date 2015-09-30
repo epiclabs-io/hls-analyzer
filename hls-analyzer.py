@@ -16,7 +16,7 @@ from bitreader import BitReader
 from ts_segment import TSSegmentParser
 
 num_segments_to_analyze_per_playlist = 1
-max_characters_frames_info = 80
+max_frames_to_show = 30
 
 def download_url(uri, range=None):
     print("\tDownloading {url}, Range: {range}".format(url=uri, range=range))
@@ -35,7 +35,7 @@ def analyze_variant(variant, bw):
     print "***** Analyzing variant ({}) *****".format(bw)
     print "\n\t** Generic information **"
     print "\tVersion: {}".format(variant.version)
-    print "\tMedia sequence: {}".format(variant.media_sequence)
+    print "\tStart Media sequence: {}".format(variant.media_sequence)
     print "\tIs Live: {}".format(not variant.is_endlist)
     print "\tEncrypted: {}".format(variant.key is not None)
     print "\tNumber of segments: {}".format(len(variant.segments))
@@ -53,7 +53,7 @@ def analyze_variant(variant, bw):
             start = 0
 
     for i in range(start, min(start + num_segments_to_analyze_per_playlist, len(variant.segments))):
-        analyze_segment(variant.segments[i])
+        analyze_segment(variant.segments[i], i == start)
 
 def get_range(segment_range):
     if(segment_range is None):
@@ -89,17 +89,28 @@ def printTimingInfo(ts_parser, segment):
             minDuration = track.payloadReader.getDuration()
 
     minDuration /= 1000000.0
-    print("\tDuration difference (declared vs real): {0} s ({1:.2f}%)".format(segment.duration - minDuration, abs((1 - segment.duration/minDuration)*100)))
+    print("\tDuration difference (declared vs real): {0}s ({1:.2f}%)".format(segment.duration - minDuration, abs((1 - segment.duration/minDuration)*100)))
 
 def printFramesInfo(ts_parser):
     print "\n\t** Frames **"
 
     for i in range(0, ts_parser.getNumTracks()):
         track = ts_parser.getTrack(i)
-        print "\tTrack #{0} - KF: {1:.03f}, Frames: {2}".format(i, track.payloadReader.getKeyframeInterval()/1000000.0, track.payloadReader.getFramesInfo()[0:max_characters_frames_info])
+        print "\tTrack #{0} - KF: {1:.03f}, Frames: ".format(i, track.payloadReader.getKeyframeInterval()/1000000.0),
 
-def analyze_segment(segment):
+        frameCount = min(max_frames_to_show, len(track.payloadReader.frames))
+        for j in range(0, frameCount):
+            print "{0} ".format(track.payloadReader.frames[j].type),
+        print ""
 
+def printNotes(ts_parser):
+    for i in range(0, ts_parser.getNumTracks()):
+        track = ts_parser.getTrack(i)
+        if len(track.payloadReader.frames) > 0:
+            if track.payloadReader.frames[0].type != "I":
+                print "\tPlease, note track #{0} is not starting with a keyframe. This will cause not seamless bitrate switching".format(i)
+
+def analyze_segment(segment, first_segment):
     segment_data = bytearray(download_url(segment.absolute_uri, get_range(segment.byterange)))
     ts_parser = TSSegmentParser(segment_data)
     ts_parser.prepare()
@@ -109,10 +120,10 @@ def analyze_segment(segment):
     printTimingInfo(ts_parser, segment)
 
     printFramesInfo(ts_parser)
+    if first_segment :
+        printNotes(ts_parser);
 
     print "\n"
-
-
 
 # MAIN APP
 parser = argparse.ArgumentParser(description='Analyze HLS streams and gets useful information')
@@ -123,10 +134,8 @@ parser.add_argument('url', metavar='Url', type=str,
 parser.add_argument('-s', action="store", dest="segments", type=int, default=1,
                help='Number of segments to be analyzed per playlist')
 
-parser.add_argument('-l', action="store", dest="frame_info_len", type=int, default=80,
-               help='Max length per track of frames information')
-
-
+parser.add_argument('-l', action="store", dest="frame_info_len", type=int, default=30,
+               help='Max number of frames per track whose information will be reported')
 
 args = parser.parse_args()
 

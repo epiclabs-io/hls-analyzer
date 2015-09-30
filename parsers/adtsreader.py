@@ -5,6 +5,7 @@
 
 from bitreader import BitReader
 from payloadreader import PayloadReader
+from frame import Frame
 
 class ADTSReader(PayloadReader):
 
@@ -69,11 +70,7 @@ class ADTSReader(PayloadReader):
                 state = self.STATE_FIND_SYNC
 
                 self.timeUs = self.timeUs + self.frameDuration
-
-                if( len(self.framesInfo) > 0 ):
-                    self.framesInfo += "-"
-                #self.framesInfo += "I({0:.03f})".format(self.timeUs/1000000.0)
-                self.framesInfo += "I"
+                self.frames.append(Frame("I", self.timeUs))
 
                 #print "AAC Frame. SR:{}, Channels:{}, Size: {}, Time: {}".format(self.sampleRate, self.channels, self.currentFrameSize, self.timeUs)
 

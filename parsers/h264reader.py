@@ -6,6 +6,7 @@
 from bitreader import BitReader
 from payloadreader import PayloadReader
 from fractions import Fraction
+from frame import Frame
 
 class H264Reader(PayloadReader):
 
@@ -59,7 +60,6 @@ class H264Reader(PayloadReader):
         self.aspectRatioNum = 1
         self.aspectRatioDen = 1
         self.displayAspectRatio = Fraction(1, 1)
-        self.framesInfo = ""
 
     def getMimeType(self):
         return "video/avc"
@@ -114,7 +114,7 @@ class H264Reader(PayloadReader):
         elif(type == self.NAL_UNIT_TYPE_AUD):
             self._parseAUDNALUnit(start, limit)
         elif(type == self.NAL_UNIT_TYPE_IDR):
-            self._addNewFrame(self.SLICE_TYPE_I)
+            self._addNewFrame(self.SLICE_TYPE_I, self.timeUs)
             keyframeInterval = self.timeUs - self.lastKeyframePts
             self.keyframeInterval = keyframeInterval
             self.lastKeyframePts = self.timeUs
@@ -203,12 +203,13 @@ class H264Reader(PayloadReader):
         sliceType = sliceParser.readUnsignedExpGolombCodedInt()
 
         #print "{} Frame - Time: {}".format(self._getSliceTypeName(sliceType), self.timeUs)
-        self._addNewFrame(sliceType)
+        self._addNewFrame(sliceType, self.timeUs)
 
-    def _addNewFrame(self, type):
-        if( len(self.framesInfo) > 0 ):
-            self.framesInfo += "-"
-        self.framesInfo += "{0}".format(self._getSliceTypeName(type))
+    def _addNewFrame(self, type, timeUs):
+        #if( len(self.framesInfo) > 0 ):
+        #    self.framesInfo += "-"
+        #self.framesInfo += "{0}".format(self._getSliceTypeName(type))
+        self.frames.append(Frame(self._getSliceTypeName(type), self.timeUs))
 
     def _parseAUDNALUnit(self, start, limit):
         audParser = BitReader(self.dataBuffer[start:limit])

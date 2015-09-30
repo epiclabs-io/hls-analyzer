@@ -10,7 +10,8 @@ class PayloadReader(object):
         self.framesInfo = ""
         self.keyframeInterval = 0
         self.lastKeyframePts = 0
-
+        self.frames = []
+        
     def append(self, packet):
         self.dataBuffer.extend(packet.data[packet.byteOffset:])
 
