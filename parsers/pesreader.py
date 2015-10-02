@@ -6,6 +6,7 @@
 from h264reader import H264Reader
 from adtsreader import ADTSReader
 from id3reader import ID3Reader
+from mpegreader import MpegReader
 from bitreader import BitReader
 
 class PESReader(object):
@@ -28,6 +29,8 @@ class PESReader(object):
             self.payloadReader = H264Reader()
         elif (type == self.TS_STREAM_TYPE_ID3):
             self.payloadReader = ID3Reader()
+        elif (type == self.TS_STREAM_TYPE_MPA or type == self.TS_STREAM_TYPE_MPA_LSF):
+            self.payloadReader = MpegReader()
 
     def appendData(self, payload_unit_start_indicator, packet):
         if(payload_unit_start_indicator):
