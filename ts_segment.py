@@ -127,7 +127,7 @@ class TSSegmentParser(object):
                 self._parseProgramTable(payload_unit_start_indicator, packetParser)
 
             else:
-                track = self.tracks[pid]
+                track = self.tracks.get(pid, None)
                 if(track is not None):
                     track.appendData(payload_unit_start_indicator, packetParser)
 
