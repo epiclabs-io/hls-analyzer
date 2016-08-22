@@ -38,14 +38,12 @@ class TSSegmentParser(object):
             self.tracks[0].appendData(0, dataParser)
             self.tracks[0].payloadReader.consumeData(self.lastPts)
 
-        #print "\tPackets count: {}".format(self.packetsCount)
-
     def getNumTracks(self):
         return len(self.tracks)
 
     def getTrack(self, index):
         i = 0
-        for key, value in self.tracks.iteritems():
+        for _, value in self.tracks.iteritems():
             if(i == index):
                 return value
             i = i + 1
@@ -74,7 +72,6 @@ class TSSegmentParser(object):
                 dataRead =  (self.data[self.dataOffset] << 8) | (self.data[self.dataOffset + 1])
                 if (dataRead == 0x4944 or (dataRead & 0xfff6) == 0xfff0):
                     self.containerType = self.CONTAINER_RAW_AAC
-                    self.payloadStartIndex = 0
                     break
 
             self.dataOffset = self.dataOffset + 1
@@ -127,9 +124,10 @@ class TSSegmentParser(object):
                 self._parseProgramTable(payload_unit_start_indicator, packetParser)
 
             else:
-                track = self.tracks[pid]
-                if(track is not None):
-                    track.appendData(payload_unit_start_indicator, packetParser)
+                if pid in self.tracks:
+                    track = self.tracks[pid]
+                    if (track is not None):
+                        track.appendData(payload_unit_start_indicator, packetParser)
 
     def _parseProgramId(self, payload_unit_start_indicator, packetParser):
         if (payload_unit_start_indicator):
@@ -137,26 +135,22 @@ class TSSegmentParser(object):
 
         packetParser.skipBits(12)
 
-        sectionLength = packetParser.readBits(12)
+        # sectionLength
+        packetParser.readBits(12)
 
         packetParser.skipBits(3 + 7 * 8)
 
         self.pmtId = packetParser.readBits(13)
-        #print "PMT Id: {}".format(self.pmtId)
 
     def _parseProgramTable(self, payload_unit_start_indicator, packetParser):
         if (payload_unit_start_indicator):
             packetParser.skipBits(packetParser.readUnsignedByte() * 8)
 
         packetParser.skipBits(12)
-
         section_length = packetParser.readBits(12)
-
         packetParser.skipBits(4 + 7 * 8)
-
         program_info_length = packetParser.readBits(12)
         packetParser.skipBytes( program_info_length )
-
         bytesRemaining = section_length - 9 - program_info_length - 4
 
         while (bytesRemaining > 0):
@@ -165,13 +159,8 @@ class TSSegmentParser(object):
             elementaryPID = packetParser.readBits(13)
             packetParser.skipBits(4)
             ES_info_length = packetParser.readBits(12)
-
             packetParser.skipBits(ES_info_length * 8)
-
             bytesRemaining = bytesRemaining - ES_info_length - 5
-
-            #print "Track Id: {}, type: {}".format(elementaryPID, hex(streamType))
-
             self.tracks[elementaryPID] = PESReader(elementaryPID, streamType)
 
         self.pmtParsed = True

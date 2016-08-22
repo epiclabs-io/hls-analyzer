@@ -4,8 +4,8 @@
 # license that can be found in the LICENSE file.
 
 from bitreader import BitReader
-from payloadreader import PayloadReader
-from frame import Frame
+from parsers.payloadreader import PayloadReader
+from parsers.frame import Frame
 
 class ADTSReader(PayloadReader):
 
@@ -72,8 +72,6 @@ class ADTSReader(PayloadReader):
                 self.timeUs = self.timeUs + self.frameDuration
                 self.frames.append(Frame("I", self.timeUs))
 
-                #print "AAC Frame. SR:{}, Channels:{}, Size: {}, Time: {}".format(self.sampleRate, self.channels, self.currentFrameSize, self.timeUs)
-
         self.dataBuffer = self.dataBuffer[offset:]
 
     def _findNextSync(self, index):
@@ -88,8 +86,6 @@ class ADTSReader(PayloadReader):
         return len(self.dataBuffer);
 
     def _parseAACHeader(self, start):
-        #print "AAC Frame {},{},{},{},{}".format(hex(self.dataBuffer[start]), hex(self.dataBuffer[start+1]), self.dataBuffer[start+2], self.dataBuffer[start+3], self.dataBuffer[start+4])
-
         aacHeaderParser = BitReader(self.dataBuffer[start:start + self.ADTS_SYNC_SIZE + self.ADTS_HEADER_SIZE])
 
         aacHeaderParser.skipBits(15)
@@ -101,8 +97,8 @@ class ADTSReader(PayloadReader):
         else:
             self.sampleRate = sampleRateIndex
 
-        self.frameDuration = (1000000 * 1024L) / self.sampleRate;
-        self.keyframeInterval = self.frameDuration
+        self.frameDuration = (1000000 * 1024) / self.sampleRate;
+        self.frames.append(Frame("I", self.timeUs))
 
         aacHeaderParser.skipBits(1)
         self.channels = aacHeaderParser.readBits(3)

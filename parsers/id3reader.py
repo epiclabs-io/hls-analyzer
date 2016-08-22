@@ -4,7 +4,7 @@
 # license that can be found in the LICENSE file.
 
 from bitreader import BitReader
-from payloadreader import PayloadReader
+from parsers.payloadreader import PayloadReader
 
 class ID3Reader(PayloadReader):
 

@@ -8,7 +8,12 @@ PYTHON_MAJOR_VERSION = sys.version_info
 
 import os
 import posixpath
-from cookielib import CookieJar
+
+try:
+    from cookielib import CookieJar
+except ImportError:
+    from http.cookiejar import CookieJar
+
 
 try:
     import urlparse as url_parser

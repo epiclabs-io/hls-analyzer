@@ -3,10 +3,10 @@
 # Use of this source code is governed by a MIT License
 # license that can be found in the LICENSE file.
 
-from h264reader import H264Reader
-from adtsreader import ADTSReader
-from id3reader import ID3Reader
-from mpegreader import MpegReader
+from parsers.h264reader import H264Reader
+from parsers.adtsreader import ADTSReader
+from parsers.id3reader import ID3Reader
+from parsers.mpegreader import MpegReader
 from bitreader import BitReader
 
 class PESReader(object):
@@ -62,9 +62,9 @@ class PESReader(object):
                  packet.skipBytes(5) # skipping dts
 
     def _ptsToTimeUs(self, pts):
-        if (pts > 4294967295L):
+        if (pts > 4294967295):
             # decrement 2^33
-            pts -= 8589934592L;
+            pts -= 8589934592;
 
 
         timeUs = pts * 1000000 / 90000

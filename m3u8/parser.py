@@ -3,7 +3,7 @@
 # Use of this source code is governed by a MIT License
 # license that can be found in the LICENSE file.
 
-import iso8601
+#import iso8601
 import datetime
 import itertools
 import re
@@ -15,8 +15,8 @@ http://stackoverflow.com/questions/2785755/how-to-split-but-ignore-separators-in
 '''
 ATTRIBUTELISTPATTERN = re.compile(r'''((?:[^,"']|"[^"]*"|'[^']*')+)''')
 
-def cast_date_time(value):
-    return iso8601.parse_date(value)
+#def cast_date_time(value):
+#    return iso8601.parse_date(value)
 
 def format_date_time(value):
     return value.isoformat()
@@ -61,11 +61,11 @@ def parse(content):
             _parse_simple_parameter(line, data, float)
         elif line.startswith(protocol.ext_x_media_sequence):
             _parse_simple_parameter(line, data, int)
-        elif line.startswith(protocol.ext_x_program_date_time):
-            _, program_date_time = _parse_simple_parameter_raw_value(line, cast_date_time)
-            if not data.get('program_date_time'):
-                data['program_date_time'] = program_date_time
-            state['current_program_date_time'] = program_date_time
+        #elif line.startswith(protocol.ext_x_program_date_time):
+        #    _, program_date_time = _parse_simple_parameter_raw_value(line, cast_date_time)
+        #    if not data.get('program_date_time'):
+        #        data['program_date_time'] = program_date_time
+        #    state['current_program_date_time'] = program_date_time
         elif line.startswith(protocol.ext_x_discontinuity):
             state['discontinuity'] = True
         elif line.startswith(protocol.ext_x_version):

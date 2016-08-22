@@ -4,9 +4,9 @@
 # license that can be found in the LICENSE file.
 
 from bitreader import BitReader
-from payloadreader import PayloadReader
+from parsers.payloadreader import PayloadReader
 from fractions import Fraction
-from frame import Frame
+from parsers.frame import Frame
 
 class H264Reader(PayloadReader):
 
@@ -81,13 +81,10 @@ class H264Reader(PayloadReader):
             self.timeUs = pts
 
         if(len(self.dataBuffer) > 0):
-            #print "Packet length: {}, type: {}, pts: {}".format(len(self.dataBuffer), self.getMimeType(), pts)
-            #print "Packet data: {},{},{},{},{}".format(hex(self.dataBuffer[0]), hex(self.dataBuffer[1]), hex(self.dataBuffer[2]), hex(self.dataBuffer[3]), hex(self.dataBuffer[4]))
-
-            offset = self._findNextNALUnit(0, -1)
+            offset = self._findNextNALUnit(0)
             nextNalUnit = 0
             while (nextNalUnit < len(self.dataBuffer)):
-                nextNalUnit = self._findNextNALUnit(offset + 3, -1)
+                nextNalUnit = self._findNextNALUnit(offset + 3)
 
                 if(nextNalUnit < len(self.dataBuffer)):
                     self._processNALUnit(offset, nextNalUnit, self.dataBuffer[offset + 3] & 0x1F)
@@ -95,70 +92,62 @@ class H264Reader(PayloadReader):
 
             self.dataBuffer = self.dataBuffer[offset:]
 
-    def _findNextNALUnit(self, index, type):
+    def _findNextNALUnit(self, index):
         limit = len(self.dataBuffer) - 3
-
         for i in range(index, limit):
             if (self.dataBuffer[i] == 0
                     and self.dataBuffer[i + 1] == 0
                     and self.dataBuffer[i + 2] == 1):
-                if(type == -1 or (self.dataBuffer[i + 3] & 0x1F) == type):
-                    return i
+                
+                return i
 
         return len(self.dataBuffer);
 
-    def _processNALUnit(self, start, limit, type):
-
-        if(type == self.NAL_UNIT_TYPE_SPS):
+    def _processNALUnit(self, start, limit, nalType):
+        if(nalType == self.NAL_UNIT_TYPE_SPS):
             self._parseSPSNALUnit(start, limit)
-        elif(type == self.NAL_UNIT_TYPE_AUD):
+        elif(nalType == self.NAL_UNIT_TYPE_AUD):
             self._parseAUDNALUnit(start, limit)
-        elif(type == self.NAL_UNIT_TYPE_IDR):
+        elif(nalType == self.NAL_UNIT_TYPE_IDR):
             self._addNewFrame(self.SLICE_TYPE_I, self.timeUs)
-            keyframeInterval = self.timeUs - self.lastKeyframePts
-            self.keyframeInterval = keyframeInterval
-            self.lastKeyframePts = self.timeUs
-        elif(type == self.NAL_UNIT_TYPE_SEI):
+        elif(nalType == self.NAL_UNIT_TYPE_SEI):
             self._parseSEINALUnit(start, limit);
-        elif(type == self.NAL_UNIT_TYPE_SLICE):
+        elif(nalType == self.NAL_UNIT_TYPE_SLICE):
             self._parseSliceNALUnit(start, limit)
 
-    def _getSliceTypeName(self, type):
-        if (type > 4):
-            type = type - 5
-
-        if(type == self.SLICE_TYPE_B):
+    def _getSliceTypeName(self, sliceType):
+        if (sliceType > 4):
+            sliceType = sliceType - 5
+        if(sliceType == self.SLICE_TYPE_B):
             return "B"
-        elif(type == self.SLICE_TYPE_I):
+        elif(sliceType == self.SLICE_TYPE_I):
             return "I"
-        elif(type == self.SLICE_TYPE_P):
+        elif(sliceType == self.SLICE_TYPE_P):
             return "P"
-        elif(type == self.SLICE_TYPE_SI):
+        elif(sliceType == self.SLICE_TYPE_SI):
             return "SI"
-        elif(type == self.SLICE_TYPE_SP):
+        elif(sliceType == self.SLICE_TYPE_SP):
             return "SP"
-
         return "Unknown"
 
-    def _getNALUnitName(self, type):
-        if (type == self.NAL_UNIT_TYPE_SLICE):
+    def _getNALUnitName(self, nalType):
+        if (nalType == self.NAL_UNIT_TYPE_SLICE):
             return "SLICE"
-        elif (type == self.NAL_UNIT_TYPE_SEI):
+        elif (nalType == self.NAL_UNIT_TYPE_SEI):
             return "SEI"
-        elif (type == self.NAL_UNIT_TYPE_PPS):
+        elif (nalType == self.NAL_UNIT_TYPE_PPS):
             return "PPS"
-        elif (type == self.NAL_UNIT_TYPE_SPS):
+        elif (nalType == self.NAL_UNIT_TYPE_SPS):
             return "SPS"
-        elif (type == self.NAL_UNIT_TYPE_AUD):
+        elif (nalType == self.NAL_UNIT_TYPE_AUD):
             return "AUD"
-        elif (type == self.NAL_UNIT_TYPE_IDR):
+        elif (nalType == self.NAL_UNIT_TYPE_IDR):
             return "IDR"
-        elif (type == self.NAL_UNIT_TYPE_END_SEQUENCE):
+        elif (nalType == self.NAL_UNIT_TYPE_END_SEQUENCE):
             return "END SEQUENCE"
-        elif (type == self.NAL_UNIT_TYPE_END_STREAM):
+        elif (nalType == self.NAL_UNIT_TYPE_END_STREAM):
             return "END STREAM"
-        else:
-            return "Unknown"
+        return "Unknown"
 
     def _getProfileName(self, profileId):
         if (profileId == 0x42):
@@ -180,19 +169,14 @@ class H264Reader(PayloadReader):
         seiParser = BitReader(self.dataBuffer[start:limit])
         seiParser.skipBytes(4)
 
-        # Parse payload type
-        payloadType = 0
         while True:
             data = seiParser.readUnsignedByte()
-            payloadType += data
             if (data != 0xFF):
                 break;
 
         # Parse payload size
-        payloadSize = 0
         while True:
             data = seiParser.readUnsignedByte()
-            payloadSize += data
             if (data != 0xFF):
                 break;
 
@@ -201,15 +185,10 @@ class H264Reader(PayloadReader):
         sliceParser.skipBytes(4)
         sliceParser.readUnsignedExpGolombCodedInt()
         sliceType = sliceParser.readUnsignedExpGolombCodedInt()
-
-        #print "{} Frame - Time: {}".format(self._getSliceTypeName(sliceType), self.timeUs)
         self._addNewFrame(sliceType, self.timeUs)
 
-    def _addNewFrame(self, type, timeUs):
-        #if( len(self.framesInfo) > 0 ):
-        #    self.framesInfo += "-"
-        #self.framesInfo += "{0}".format(self._getSliceTypeName(type))
-        self.frames.append(Frame(self._getSliceTypeName(type), self.timeUs))
+    def _addNewFrame(self, frameType, timeUs):
+        self.frames.append(Frame(self._getSliceTypeName(frameType), timeUs))
 
     def _parseAUDNALUnit(self, start, limit):
         audParser = BitReader(self.dataBuffer[start:limit])
@@ -252,7 +231,6 @@ class H264Reader(PayloadReader):
                         else:
                             self._skipScalingList(spsParser, 64)
 
-
         spsParser.readUnsignedExpGolombCodedInt(); # log2_max_frame_num_minus4
         picOrderCntType = spsParser.readUnsignedExpGolombCodedInt();
         if(picOrderCntType == 0):
@@ -267,7 +245,6 @@ class H264Reader(PayloadReader):
             for i in range(0, numRefFramesInPicOrderCntCycle):
                 spsParser.readSignedExpGolombCodedInt(); #offset_for_ref_frame[i]
 
-
         self.numRefFrames = spsParser.readUnsignedExpGolombCodedInt(); # max_num_ref_frames
         spsParser.skipBits(1); # gaps_in_frame_num_value_allowed_flag
 
@@ -279,7 +256,6 @@ class H264Reader(PayloadReader):
         if(frameMbsOnlyFlag == 0):
             frameHeightInMbs += picHeightInMapUnits
             spsParser.skipBits(1) # mb_adaptive_frame_field_flag
-
 
         spsParser.skipBits(1); # direct_8x8_inference_flag
         self.frameWidth = picWidthInMbs * 16;
@@ -318,17 +294,14 @@ class H264Reader(PayloadReader):
                     self.aspectRatioNum = self.H264_ASPECT_RATIO_PIXEL_ASPECT[aspect_ratio_idc][0]
                     self.aspectRatioDen = self.H264_ASPECT_RATIO_PIXEL_ASPECT[aspect_ratio_idc][1]
 
-
         if(self.aspectRatioNum != 0):
             self.displayAspectRatio = Fraction(self.frameWidth * self.aspectRatioNum,
                 self.frameHeight * self.aspectRatioDen)
 
-        #print "SPS: Profile: {}, Level: {}, Width: {}, Height: {}, Ref Frames: {}, Aspect ratio: {}/{}".format(self.profileId, self.levelId, self.frameWidth, self.frameHeight, self.numRefFrames, self.aspectRatioNum, self.aspectRatioDen)
-
     def _skipScalingList(self, parser, size):
         lastScale = 8
         nextScale = 8
-        for i in range(0, size):
+        for _ in range(0, size):
             if(nextScale != 0):
                 deltaScale = parser.readSignedExpGolombCodedInt()
                 nextScale = (lastScale + deltaScale + 256) % 256

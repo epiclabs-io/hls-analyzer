@@ -8,8 +8,6 @@ class PayloadReader(object):
     def __init__(self):
         self.dataBuffer = [];
         self.framesInfo = ""
-        self.keyframeInterval = 0
-        self.lastKeyframePts = 0
         self.frames = []
         
     def append(self, packet):
@@ -40,6 +38,3 @@ class PayloadReader(object):
 
     def getFramesInfo(self):
         return self.framesInfo
-
-    def getKeyframeInterval(self):
-        return self.keyframeInterval
