@@ -115,7 +115,6 @@ class TSSegmentParser(object):
             if (length > 0):
                 packetParser.skipBytes(length)
 
-
         if (adaptation_field == 1 or adaptation_field == 3):
             if (pid == 0):
                 self._parseProgramId(payload_unit_start_indicator, packetParser)
@@ -124,10 +123,9 @@ class TSSegmentParser(object):
                 self._parseProgramTable(payload_unit_start_indicator, packetParser)
 
             else:
-                if pid in self.tracks:
-                    track = self.tracks[pid]
-                    if (track is not None):
-                        track.appendData(payload_unit_start_indicator, packetParser)
+                track = self.tracks.get(pid, None)
+                if(track is not None):
+                    track.appendData(payload_unit_start_indicator, packetParser)
 
     def _parseProgramId(self, payload_unit_start_indicator, packetParser):
         if (payload_unit_start_indicator):
