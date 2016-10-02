@@ -8,6 +8,7 @@ from parsers.adtsreader import ADTSReader
 from parsers.id3reader import ID3Reader
 from parsers.mpegreader import MpegReader
 from parsers.metadatareader import MetadataReader
+from parsers.unknownpayloadreader import UnknownPayloadReader
 from bitreader import BitReader
 
 class PESReader(object):
@@ -36,7 +37,7 @@ class PESReader(object):
         elif (ts_type == self.TS_STREAM_TYPE_METADATA):
             self.payloadReader = MetadataReader()    
         else:
-            self.payloadReader = None
+            self.payloadReader = UnknownPayloadReader()
 
     def appendData(self, payload_unit_start_indicator, packet):
         if(payload_unit_start_indicator):
