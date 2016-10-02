@@ -7,6 +7,7 @@ from parsers.h264reader import H264Reader
 from parsers.adtsreader import ADTSReader
 from parsers.id3reader import ID3Reader
 from parsers.mpegreader import MpegReader
+from parsers.metadatareader import MetadataReader
 from bitreader import BitReader
 
 class PESReader(object):
@@ -16,21 +17,26 @@ class PESReader(object):
     TS_STREAM_TYPE_ID3 = 0x15
     TS_STREAM_TYPE_MPA = 0x03
     TS_STREAM_TYPE_MPA_LSF = 0x04
+    TS_STREAM_TYPE_METADATA = 0x06
 
-    def __init__(self, pid, type ):
+    def __init__(self, pid, ts_type ):
         self.pid = pid
-        self.type = type
+        self.type = ts_type
         self.lastPts = -1;
         self.pesLength = 0;
 
-        if (type == self.TS_STREAM_TYPE_AAC):
+        if (ts_type == self.TS_STREAM_TYPE_AAC):
             self.payloadReader = ADTSReader()
-        elif (type == self.TS_STREAM_TYPE_H264):
+        elif (ts_type == self.TS_STREAM_TYPE_H264):
             self.payloadReader = H264Reader()
-        elif (type == self.TS_STREAM_TYPE_ID3):
+        elif (ts_type == self.TS_STREAM_TYPE_ID3):
             self.payloadReader = ID3Reader()
-        elif (type == self.TS_STREAM_TYPE_MPA or type == self.TS_STREAM_TYPE_MPA_LSF):
+        elif (ts_type == self.TS_STREAM_TYPE_MPA or ts_type == self.TS_STREAM_TYPE_MPA_LSF):
             self.payloadReader = MpegReader()
+        elif (ts_type == self.TS_STREAM_TYPE_METADATA):
+            self.payloadReader = MetadataReader()    
+        else:
+            self.payloadReader = None
 
     def appendData(self, payload_unit_start_indicator, packet):
         if(payload_unit_start_indicator):

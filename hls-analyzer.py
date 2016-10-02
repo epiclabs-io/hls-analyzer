@@ -11,7 +11,7 @@ import argparse
 import m3u8
 from bitreader import BitReader
 from ts_segment import TSSegmentParser
-from keyframesinfo import KeyFramesInfo
+from videoframesinfo import VideoFramesInfo
 
 try:
     import urllib2
@@ -21,7 +21,7 @@ except ImportError:
 num_segments_to_analyze_per_playlist = 1
 max_frames_to_show = 30
 
-keyFramesInfoDict = dict()
+videoFramesInfoDict = dict()
 
 def download_url(uri, httpRange=None):
     print("\n\t** Downloading {url}, Range: {httpRange} **".format(url=uri, httpRange=httpRange))
@@ -44,8 +44,10 @@ def analyze_variant(variant, bw):
     print ("\tIs Live: {}".format(not variant.is_endlist))
     print ("\tEncrypted: {}".format(variant.key is not None))
     print ("\tNumber of segments: {}".format(len(variant.segments)))
-
-    start = 0;
+    print ("\tPlaylist duration: {}".format(get_playlist_duration(variant)))
+    
+    start = 0
+    videoFramesInfoDict[bw] = VideoFramesInfo()
 
     # Live
     if(not variant.is_endlist):
@@ -58,7 +60,13 @@ def analyze_variant(variant, bw):
             start = 0
 
     for i in range(start, min(start + num_segments_to_analyze_per_playlist, len(variant.segments))):
-        analyze_segment(variant.segments[i])
+        analyze_segment(variant.segments[i], bw, variant.media_sequence + i)
+
+def get_playlist_duration(variant):
+    duration = 0
+    for i in range(0, len(variant.segments)):
+        duration = duration + variant.segments[i].duration
+    return duration
 
 def get_range(segment_range):
     if(segment_range is None):
@@ -99,7 +107,7 @@ def printTimingInfo(ts_parser, segment):
     else:
         print("\tDuration is 0")
 
-def printFramesInfo(ts_parser):
+def analyzeFrames(ts_parser, bw, segment_index):
     print ("\n\t** Frames **")
 
     for i in range(0, ts_parser.getNumTracks()):
@@ -110,15 +118,15 @@ def printFramesInfo(ts_parser):
         for j in range(0, frameCount):
             print "{0}".format(track.payloadReader.frames[j].type),
         if track.payloadReader.getMimeType().startswith("video/"):
-            printVideoKeyframeInfo(track)
+            videoFramesInfoDict[bw].segmentsFirstFramePts[segment_index] = track.payloadReader.frames[i].timeUs
+            analyzeVideoframes(track, bw)
         print ("")
 
-def printVideoKeyframeInfo(track):
+def analyzeVideoframes(track, bw):
     nkf = 0
-    kfi = 0
-    lkf = -1
     print ("")
     for i in range(0, len(track.payloadReader.frames)):
+            
         if i == 0:
             if track.payloadReader.frames[i].isKeyframe() == True:
                 print ("\t\tGood! Track starts with a keyframe".format(i))
@@ -126,27 +134,48 @@ def printVideoKeyframeInfo(track):
                 print ("\t\tWarning: note this is not starting with a keyframe. This will cause not seamless bitrate switching".format(i))
         if track.payloadReader.frames[i].isKeyframe():
             nkf = nkf + 1
-            kfi = track.payloadReader.frames[i].timeUs - lkf
-            lkf = track.payloadReader.frames[i].timeUs
+            if videoFramesInfoDict[bw].lastKfPts > -1:
+                videoFramesInfoDict[bw].lastKfi = track.payloadReader.frames[i].timeUs - videoFramesInfoDict[bw].lastKfPts
+                if videoFramesInfoDict[bw].minKfi == 0:
+                    videoFramesInfoDict[bw].minKfi = videoFramesInfoDict[bw].lastKfi
+                else:
+                    videoFramesInfoDict[bw].minKfi = min(videoFramesInfoDict[bw].lastKfi, videoFramesInfoDict[bw].minKfi)
+                videoFramesInfoDict[bw].maxKfi = max(videoFramesInfoDict[bw].lastKfi, videoFramesInfoDict[bw].maxKfi)  
+            videoFramesInfoDict[bw].lastPts = track.payloadReader.frames[i].timeUs
     print ("\t\tKeyframes count: {}".format(nkf))
     if nkf == 0:
         print ("\t\tWarning: there are no keyframes in this track! This will cause a bad playback experience")
     if nkf > 1:
-        print ("\t\tKey frame interval within track: {}".format(kfi/1000000.0))
+        print ("\t\tKey frame interval within track: {} seconds".format(videoFramesInfoDict[bw].lastKfi/1000000.0))
     else:
         if track.payloadReader.getDuration() > 3000000.0:
             print ("\t\tWarning: track too long to have just 1 keyframe. This could cause bad playback experience and poor seeking accuracy in some video players")
 
-def analyze_segment(segment):
+    videoFramesInfoDict[bw].count = videoFramesInfoDict[bw].count + nkf
+
+    if videoFramesInfoDict[bw].count > 1:
+        kfiDeviation = videoFramesInfoDict[bw].maxKfi - videoFramesInfoDict[bw].minKfi
+        if kfiDeviation > 500000:
+            print("\t\tWarning: Key frame interval is not constant. Min KFI: {}, Max KFI: {}".format(videoFramesInfoDict[bw].minKfi, videoFramesInfoDict[bw].maxKfi) )
+
+def analyze_segment(segment, bw, segment_index):
     segment_data = bytearray(download_url(segment.absolute_uri, get_range(segment.byterange)))
     ts_parser = TSSegmentParser(segment_data)
     ts_parser.prepare()
 
     printFormatInfo(ts_parser)
     printTimingInfo(ts_parser, segment)
-    printFramesInfo(ts_parser)
+    analyzeFrames(ts_parser, bw, segment_index)
 
     print ("\n")
+
+def analyze_variants_frame_alignment():
+    df = videoFramesInfoDict.copy()
+    bw, vf = df.popitem()
+    for bwkey, frameinfo in df.iteritems():
+        for segment_index, value in frameinfo.segmentsFirstFramePts.iteritems():
+            if vf.segmentsFirstFramePts[segment_index] != value:
+                print ("Warning: Variants {} bps and {} bps, segment {}, are not aligned (first frame PTS not equal {} != {})".format(bw, bwkey, segment_index, vf.segmentsFirstFramePts[segment_index], value))
 
 # MAIN
 parser = argparse.ArgumentParser(description='Analyze HLS streams and gets useful information')
@@ -178,3 +207,5 @@ if(m3u8_obj.is_variant):
         analyze_variant(m3u8.load(playlist.absolute_uri), playlist.stream_info.bandwidth)
 else:
     analyze_variant(m3u8_obj, 0)
+
+analyze_variants_frame_alignment()
