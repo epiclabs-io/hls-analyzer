@@ -118,15 +118,18 @@ def analyzeFrames(ts_parser, bw, segment_index):
         for j in range(0, frameCount):
             print "{0}".format(track.payloadReader.frames[j].type),
         if track.payloadReader.getMimeType().startswith("video/"):
-            videoFramesInfoDict[bw].segmentsFirstFramePts[segment_index] = track.payloadReader.frames[i].timeUs
+            print("\tAA: {}, BB: {}".format(segment_index, bw))
+            if len(track.payloadReader.frames) > 0:
+                videoFramesInfoDict[bw].segmentsFirstFramePts[segment_index] = track.payloadReader.frames[0].timeUs
+            else:
+                videoFramesInfoDict[bw].segmentsFirstFramePts[segment_index] = 0
             analyzeVideoframes(track, bw)
         print ("")
 
 def analyzeVideoframes(track, bw):
     nkf = 0
     print ("")
-    for i in range(0, len(track.payloadReader.frames)):
-            
+    for i in range(0, len(track.payloadReader.frames)): 
         if i == 0:
             if track.payloadReader.frames[i].isKeyframe() == True:
                 print ("\t\tGood! Track starts with a keyframe".format(i))
