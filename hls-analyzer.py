@@ -144,7 +144,7 @@ def analyzeVideoframes(track, bw):
                 else:
                     videoFramesInfoDict[bw].minKfi = min(videoFramesInfoDict[bw].lastKfi, videoFramesInfoDict[bw].minKfi)
                 videoFramesInfoDict[bw].maxKfi = max(videoFramesInfoDict[bw].lastKfi, videoFramesInfoDict[bw].maxKfi)  
-            videoFramesInfoDict[bw].lastPts = track.payloadReader.frames[i].timeUs
+            videoFramesInfoDict[bw].lastKfPts = track.payloadReader.frames[i].timeUs
     print ("\t\tKeyframes count: {}".format(nkf))
     if nkf == 0:
         print ("\t\tWarning: there are no keyframes in this track! This will cause a bad playback experience")
