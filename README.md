@@ -2,35 +2,35 @@
 Tool for analyzing HTTP Live Streams (HLS) compatible with both VOD and Live content.
 
 It analyzes TS segments of the stream and provide useful information about the content, pretty useful to catch encoding or playback quality issues:
-<ul>
-<li>HLS information. Type of the stream (live or vod), media sequence, type of encryption and number of segments.</li>
-<li>Tracks information. Video and audio tracks information (codecs, profiles, resolution, sample rate, channels, etc)</li>
-<li>Timing information (PTS and segment duration). Useful to check if bitrates and segments are properly aligned.</li>
-<li>Frames information. Keyframe interval, frames sequence. Useful to check if every segment starts with a keyframe. Useful to ensure smooth bitrate switching.</li>
-</ul>
 
+* HLS information. Type of the stream (live or vod), media sequence, type of encryption and number of segments.
+* Tracks information. Video and audio tracks information (codecs, profiles, resolution, sample rate, channels, etc)
+* Timing information (PTS and segment duration). Useful to check if bitrates and segments are properly aligned.
+* Frames information. Keyframe interval, frames sequence. Useful to check if every segment starts with a keyframe. Useful to ensure smooth bitrate switching.
 
+## Command line tool syntax
 
-#Command line tool syntax
 `python hls-analyzer.py [-h] [-s SEGMENTS] [-l FRAME_INFO_LEN] Url`
 
-<ul><li>Url: Url of the stream to be analyzed</li></ul>
+* `Url`: Url of the stream to be analyzed
 
 Optional arguments:
-<ul>
-<li>-s SEGMENTS        Number of segments to be analyzed per playlist. By default, one segment per playlist is analyzed</li>
-<li>-l FRAME_INFO_LEN  Max length per track for frames information</li>
-<li>-h, --help         show help message</li>
-</ul>
 
-#Example of use
+* `-s SEGMENTS`        Number of segments to be analyzed per playlist. By default, one segment per playlist is analyzed
+* `-l FRAME_INFO_LEN`  Max length per track for frames information
+* `-h, --help`         Show help message
+
+
+## Example of use
 
 `python hls-analyzer.py https://devimages.apple.com.edgekey.net/streaming/examples/bipbop_4x3/bipbop_4x3_variant.m3u8`
 
-Output:<br/>
-`Master playlist. List of variants:`
-    `Playlist: https://devimages.apple.com.edgekey.net/streaming/examples/bipbop_4x3/gear1/prog_index.m3u8, bw: 232370`
-    `Playlist: https://devimages.apple.com.edgekey.net/streaming/examples/bipbop_4x3/gear2/prog_index.m3u8, bw: 649879`
+Output:
+
+```
+Master playlist. List of variants:
+    Playlist: https://devimages.apple.com.edgekey.net/streaming/examples/bipbop_4x3/gear1/prog_index.m3u8, bw: 232370
+    Playlist: https://devimages.apple.com.edgekey.net/streaming/examples/bipbop_4x3/gear2/prog_index.m3u8, bw: 649879
 
 
 ***** Analyzing variant (232370) *****
@@ -81,9 +81,8 @@ Output:<br/>
     ** Frames **
     Track #0 - KF: 0.067, Frames: I-I-I-I-I-P-P-P-P-P-B-B-B-B-B-P-P-P-P-P-B-B-B-B-B-P-P-P-P-P-B-B-B-B-B-P-P-P-P-P-
     Track #1 - KF: 0.046, Frames: I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-I-
+```
 
+## Third party libraries
 
-
-
-#Third party libraries
 This project uses m3u8 library created by Globo.com: https://github.com/globocom/m3u8
